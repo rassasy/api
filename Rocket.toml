@@ -1,0 +1,2 @@
+[global.databases]
+neo4j = { url = "http://neo4j:test@localhost:7474/db/data" }
