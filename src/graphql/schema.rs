@@ -1,7 +1,6 @@
-use juniper::{Context as JuniperContext, FieldResult};
-
-use crate::models::{Restaurant};
+use crate::models::{Restaurant, Featurer};
 use crate::db::{Neo4jConnection};
+use juniper::{Context as JuniperContext, FieldResult, LookAheadMethods};
 
 pub struct Context {
     pub connection: Neo4jConnection
@@ -19,16 +18,48 @@ graphql_object!(Restaurant: () |&self| {
     field name() -> String as "The name of the restaurant" {
         self.name.clone()
     }
+
+    field featuredOn() -> &Vec<Featurer> as "The featurers" {
+        &self.featurers
+    }
+});
+
+graphql_object!(Featurer: () |&self| {
+    description: "A featurer"
+
+    field id() -> String as "The unique id of the restaurant" {
+        self.id.clone()
+    }
+
+    field name() -> String as "The name of the restaurant" {
+        self.name.clone()
+    }
 });
 
 pub struct QueryRoot;
 
 graphql_object!(QueryRoot: Context |&self| {
     field restaurants(&executor) -> FieldResult<Vec<Restaurant>> {
-        return Ok(vec![Restaurant{
-                id: String::from("123455677"),
-                name: String::from("haha created")
-        }]);            
+        let mut restaurant = Restaurant {
+            id: String::from("123455677"),
+            name: String::from("haha created"),
+            featurers: vec![]
+        };
+
+        if executor.look_ahead().has_child("featuredOn") {
+            println!("querying neo4j");
+            restaurant.featurers = vec![Featurer {
+                id: String::from("lololol"),
+                name: String::from("got it!")
+            }]
+        }
+
+        return Ok(vec![restaurant]);
+    }
+
+    field featuredOn(&executor) -> FieldResult<Vec<Featurer>> {
+        println!("featured called");
+        return Ok(vec![]);
     }
 });
 
@@ -41,7 +72,8 @@ graphql_object!(MutationRoot: Context |&self| {
     {
         return Ok(Restaurant {
             id: String::from("123455677"),
-            name: String::from("haha created")
+            name: String::from("haha created"),
+            featurers: vec![]
         })
     }
 });

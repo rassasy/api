@@ -26,7 +26,8 @@ fn index(graph: Neo4jConnection) -> status::Accepted<String> {
     let restaurants : Vec<Restaurant> = result.rows().map(|entry| {
         Restaurant {
             id: entry.get("r.id").unwrap(),
-            name: entry.get("r.name").unwrap()
+            name: entry.get("r.name").unwrap(),
+            featurers: vec![]
         }
     }).collect();
 
