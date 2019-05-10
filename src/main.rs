@@ -2,13 +2,17 @@
 
 #[macro_use] extern crate rocket;
 #[macro_use] extern crate juniper;
+#[macro_use] extern crate diesel;
+
 extern crate rusted_cypher;
 
+mod _diesel;
 mod models;
 mod graphql;
 mod db;
 
 use crate::db::Neo4jConnection;
+use crate::db::MySQLConnection;
 use crate::models::{Restaurant};
 use crate::graphql::schema::{QueryRoot, MutationRoot, Context};
 use juniper::RootNode;
@@ -27,7 +31,17 @@ fn index(graph: Neo4jConnection) -> status::Accepted<String> {
         Restaurant {
             id: entry.get("r.id").unwrap(),
             name: entry.get("r.name").unwrap(),
-            featurers: vec![]
+            featurers: vec![],
+            city: String::from("Tempe"),
+            state: String::from("Arizona"),
+            notes: String::from("notes"),
+            street_addresses: vec![],
+            description: String::from("description"),
+            visited: true,
+            tags: vec![],
+            website: String::from("www.google.com"),
+            yelp: String::from("www.yelp.com"),
+            country: String::from("USA")
         }
     }).collect();
 
@@ -41,20 +55,22 @@ pub fn graphiql() -> content::Html<String> {
 
 #[get("/graphql?<request>")]
 pub fn get_graphql_handler(
-    context: Neo4jConnection,
+    neo4j: Neo4jConnection,
+    mysql: MySQLConnection,
     request: juniper_rocket::GraphQLRequest,
     schema: State<Schema>
 ) -> juniper_rocket::GraphQLResponse {
-    request.execute(&schema, &Context { connection: context })
+    request.execute(&schema, &Context { neo4j, mysql })
 }
 
 #[post("/graphql", data = "<request>")]
 pub fn post_graphql_handler(
-    context: Neo4jConnection,
+    neo4j: Neo4jConnection,
+    mysql: MySQLConnection,
     request: juniper_rocket::GraphQLRequest,
     schema: State<Schema>
 ) -> juniper_rocket::GraphQLResponse {
-    request.execute(&schema, &Context { connection: context })
+    request.execute(&schema, &Context { neo4j, mysql })
 }
 
 fn main() {
@@ -65,5 +81,6 @@ fn main() {
         ))
         .mount("/", routes![index, graphiql, get_graphql_handler, post_graphql_handler])
         .attach(Neo4jConnection::fairing())
+        .attach(MySQLConnection::fairing())
         .launch();
 }
