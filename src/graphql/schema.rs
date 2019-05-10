@@ -1,9 +1,10 @@
-use crate::models::{Restaurant, Featurer};
-use crate::db::{Neo4jConnection};
+use crate::models::{Restaurant, RestaurantDetails, Featurer, FeaturerType};
+use crate::db::{Neo4jConnection, MySQLConnection};
 use juniper::{Context as JuniperContext, FieldResult, LookAheadMethods};
 
 pub struct Context {
-    pub connection: Neo4jConnection
+    pub neo4j: Neo4jConnection,
+    pub mysql: MySQLConnection
 }
 
 impl JuniperContext for Context {}
@@ -40,18 +41,37 @@ pub struct QueryRoot;
 
 graphql_object!(QueryRoot: Context |&self| {
     field restaurants(&executor) -> FieldResult<Vec<Restaurant>> {
+
+        use crate::_diesel::schema::restaurant::dsl;
+        use diesel::{RunQueryDsl, QueryDsl};
+
+        //TODO: figure out map_err
+        dsl::restaurant.order(dsl::id)
+            .load::<RestaurantDetails>(&*executor.context().mysql);
+
         let mut restaurant = Restaurant {
-            id: String::from("123455677"),
-            name: String::from("haha created"),
-            featurers: vec![]
+            id: String::from("1234"),
+            name: String::from("Nate's"),
+            featurers: vec![],
+            city: String::from("Tempe"),
+            state: String::from("Arizona"),
+            notes: String::from("notes"),
+            street_addresses: vec![],
+            description: String::from("description"),
+            visited: true,
+            tags: vec![],
+            website: String::from("www.google.com"),
+            yelp: String::from("www.yelp.com"),
+            country: String::from("USA")
         };
 
         if executor.look_ahead().has_child("featuredOn") {
             println!("querying neo4j");
             restaurant.featurers = vec![Featurer {
                 id: String::from("lololol"),
-                name: String::from("got it!")
-            }]
+                name: String::from("got it!"),
+                featurer_type: FeaturerType::PERSON
+            }];
         }
 
         return Ok(vec![restaurant]);
@@ -71,10 +91,20 @@ graphql_object!(MutationRoot: Context |&self| {
         as "Create a new Restaurant and return it"
     {
         return Ok(Restaurant {
-            id: String::from("123455677"),
-            name: String::from("haha created"),
-            featurers: vec![]
-        })
+            id: String::from("1234"),
+            name: String::from("Nate's"),
+            featurers: vec![],
+            city: String::from("Tempe"),
+            state: String::from("Arizona"),
+            notes: String::from("notes"),
+            street_addresses: vec![],
+            description: String::from("description"),
+            visited: true,
+            tags: vec![],
+            website: String::from("www.google.com"),
+            yelp: String::from("www.yelp.com"),
+            country: String::from("USA")
+        });
     }
 });
 
