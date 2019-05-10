@@ -45,6 +45,7 @@ graphql_object!(QueryRoot: Context |&self| {
         use crate::_diesel::schema::restaurant::dsl;
         use diesel::{RunQueryDsl, QueryDsl};
 
+        //TODO: figure out map_err
         dsl::restaurant.order(dsl::id)
             .load::<RestaurantDetails>(&*executor.context().mysql);
 
