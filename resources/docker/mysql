@@ -1,0 +1,11 @@
+# Derived from official mysql image (our base image)
+FROM mysql
+
+# Add a database
+ENV MYSQL_DATABASE rassasy
+
+COPY resources/ddl/sql/ /docker-entrypoint-initdb.d/
+
+# Necessary to maintain compatibility of newer MySQL versions with diesel connector
+# https://stackoverflow.com/questions/49019652/not-able-to-connect-to-mysql-docker-from-local
+CMD ["mysqld", "--default-authentication-plugin=mysql_native_password"]

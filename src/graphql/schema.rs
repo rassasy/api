@@ -1,13 +1,10 @@
-use crate::models::{Restaurant, RestaurantDetails, Featurer, FeaturerType};
-use crate::db::{Neo4jConnection, MySQLConnection};
 use juniper::{Context as JuniperContext, FieldResult, LookAheadMethods};
 
-pub struct Context {
-    pub neo4j: Neo4jConnection,
-    pub mysql: MySQLConnection
-}
+use crate::db::diesel::client::restaurant as RestaurantClient;
+use crate::db::connection::Databases;
+use crate::models::{Featurer, FeaturerType, Restaurant, RestaurantLinks, RestaurantDetail};
 
-impl JuniperContext for Context {}
+impl JuniperContext for Databases {}
 
 graphql_object!(Restaurant: () |&self| {
     description: "A restaurant"
@@ -39,34 +36,45 @@ graphql_object!(Featurer: () |&self| {
 
 pub struct QueryRoot;
 
-graphql_object!(QueryRoot: Context |&self| {
+graphql_object!(QueryRoot: Databases |&self| {
+
     field restaurants(&executor) -> FieldResult<Vec<Restaurant>> {
+        println!("LIST ALL!");
 
-        use crate::_diesel::schema::restaurant::dsl;
-        use diesel::{RunQueryDsl, QueryDsl};
+        let details : Vec<RestaurantDetail> = RestaurantClient::list(&*executor.context().mysql).unwrap();
 
-        //TODO: figure out map_err
-        dsl::restaurant.order(dsl::id)
-            .load::<RestaurantDetails>(&*executor.context().mysql);
+        let look_ahead = executor.look_ahead();
+
+        if look_ahead.has_child("featuredOn") || look_ahead.has_child("locatedAt") || look_ahead.has_child("taggedWith") {
+
+        }
+
+        //TODO: finish this implementation
+        return Ok(vec![]);
+
+    }
+
+    field restaurant(&executor, id: String) -> FieldResult<Restaurant> {
+        println!("GET ONE!");
+        let details = RestaurantClient::get(&*executor.context().mysql, id).unwrap();
 
         let mut restaurant = Restaurant {
-            id: String::from("1234"),
-            name: String::from("Nate's"),
+            id: details.id.clone(),
+            name: details.name.clone(),
             featurers: vec![],
-            city: String::from("Tempe"),
-            state: String::from("Arizona"),
-            notes: String::from("notes"),
+            city: details.city.clone(),
+            state: details.state.clone(),
+            notes: details.notes.clone(),
             street_addresses: vec![],
-            description: String::from("description"),
-            visited: true,
+            description: details.description.clone(),
+            visited: details.visited.to_lowercase().parse::<bool>().unwrap(),
             tags: vec![],
-            website: String::from("www.google.com"),
-            yelp: String::from("www.yelp.com"),
-            country: String::from("USA")
+            website: details.website.clone(),
+            yelp: details.yelp.clone(),
+            country: details.country.clone()
         };
 
         if executor.look_ahead().has_child("featuredOn") {
-            println!("querying neo4j");
             restaurant.featurers = vec![Featurer {
                 id: String::from("lololol"),
                 name: String::from("got it!"),
@@ -74,19 +82,14 @@ graphql_object!(QueryRoot: Context |&self| {
             }];
         }
 
-        return Ok(vec![restaurant]);
-    }
-
-    field featuredOn(&executor) -> FieldResult<Vec<Featurer>> {
-        println!("featured called");
-        return Ok(vec![]);
+        return Ok(restaurant);
     }
 });
 
 
 pub struct MutationRoot;
 
-graphql_object!(MutationRoot: Context |&self| {
+graphql_object!(MutationRoot: Databases |&self| {
     field add_restaurant(&executor, title: String, completed: bool) -> FieldResult<Restaurant>
         as "Create a new Restaurant and return it"
     {
@@ -108,29 +111,29 @@ graphql_object!(MutationRoot: Context |&self| {
     }
 });
 
-    // field update_todo(&executor, id: i32, completed: Option<bool>, title: Option<String>) -> FieldResult<Option<Todo>>
-    //     as "Update an existing todo item.\
-    //     \
-    //     Will only updated the provided fields - if either `completed` or `title`\
-    //     are omitted or null, they will be ignored.\
-    //     \
-    //     The mutation will return null if no todo item with the specified ID could be found."
-    // {
-    //     use crate::schema::todos::dsl;
-    //     use diesel::{ExpressionMethods, RunQueryDsl, QueryDsl};
+// field update_todo(&executor, id: i32, completed: Option<bool>, title: Option<String>) -> FieldResult<Option<Todo>>
+//     as "Update an existing todo item.\
+//     \
+//     Will only updated the provided fields - if either `completed` or `title`\
+//     are omitted or null, they will be ignored.\
+//     \
+//     The mutation will return null if no todo item with the specified ID could be found."
+// {
+//     use crate::schema::todos::dsl;
+//     use diesel::{ExpressionMethods, RunQueryDsl, QueryDsl};
 
-    //     let updated = diesel::update(dsl::todos.find(id))
-    //         .set((
-    //             completed.map(|completed| dsl::completed.eq(completed)),
-    //             title.map(|title| dsl::title.eq(title)),
-    //         ))
-    //         .execute(&*executor.context().connection)?;
+//     let updated = diesel::update(dsl::todos.find(id))
+//         .set((
+//             completed.map(|completed| dsl::completed.eq(completed)),
+//             title.map(|title| dsl::title.eq(title)),
+//         ))
+//         .execute(&*executor.context().connection)?;
 
-    //     if updated == 0 {
-    //         Ok(None)
-    //     } else {
-    //         Ok(Some(dsl::todos.find(id)
-    //             .get_result::<Todo>(&*executor.context().connection)?))
-    //     }
+//     if updated == 0 {
+//         Ok(None)
+//     } else {
+//         Ok(Some(dsl::todos.find(id)
+//             .get_result::<Todo>(&*executor.context().connection)?))
+//     }
 //     // }
 // });

@@ -1,0 +1,15 @@
+FROM rustlang/rust:nightly
+
+ENV PATH="/root/.cargo/bin:${PATH}"
+ENV ROCKET_ENV=dev
+
+COPY Cargo.toml ./
+
+RUN cargo fetch
+
+# Copy project into container
+ADD . ./
+
+RUN cargo build
+
+CMD ["./target/debug/api"]

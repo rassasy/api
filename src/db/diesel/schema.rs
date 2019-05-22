@@ -1,5 +1,5 @@
 table! {
-    restaurant {
+    restaurant_detail {
         id -> Text,
         name -> Text,
         city -> Text,
