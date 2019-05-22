@@ -20,6 +20,7 @@ RUN apt-get update && apt-get install -y default-libmysqlclient-dev
 # Copy binary from builder container to app container
 COPY --from=builder /target/release/api /usr/local/bin/
 
+# The Rocket.toml needs to exist in the working directory or a parent of the working directory
 COPY --from=builder /Rocket.toml /root
 
 WORKDIR /root

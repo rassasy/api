@@ -2,7 +2,7 @@ use juniper::{Context as JuniperContext, FieldResult, LookAheadMethods};
 
 use crate::db::diesel::client::restaurant as RestaurantClient;
 use crate::db::connection::Databases;
-use crate::models::{Featurer, FeaturerType, Restaurant, RestaurantLinks, RestaurantDetail};
+use crate::models::{Featurer, FeaturerType, Restaurant, RestaurantDetail};
 
 impl JuniperContext for Databases {}
 
