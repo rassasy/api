@@ -1,3 +1,3 @@
 [global.databases]
-neo4j = { url = "http://neo4j:test@localhost:7474/db/data" }
-mysql = { url = "mysql://root:test@127.0.0.1:3306/test" }
+neo4j = { url = "http://neo4j:password@localhost:7474/db/data" }
+mysql = { url = "mysql://rassasy-user:password@127.0.0.1:3306/rassasy" }

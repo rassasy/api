@@ -15,8 +15,28 @@ pub struct Restaurant {
     pub yelp: String
 }
 
+impl Restaurant {
+    pub fn from(details : RestaurantDetail, relations : Restaurant) -> Restaurant {
+        Restaurant {
+            id: details.id,
+            name: details.name,
+            city: details.city,
+            state: details.state,
+            featurers: relations.featurers,
+            description: details.description,
+            notes: details.notes,
+            street_addresses: relations.street_addresses,
+            country: details.country,
+            visited: details.visited.to_lowercase().parse::<bool>().unwrap(),
+            tags: relations.tags,
+            website: details.website,
+            yelp: details.yelp
+        }
+    }
+}
+
 #[derive(Debug, Queryable)]
-pub struct RestaurantDetails {
+pub struct RestaurantDetail {
     pub id : String,
     pub name : String,
     pub city : String,
@@ -27,6 +47,13 @@ pub struct RestaurantDetails {
     pub visited : String,
     pub website: String,
     pub yelp: String
+}
+
+#[derive(Debug)]
+pub struct RestaurantLinks {
+    pub featurers : Vec<Featurer>,
+    pub street_addresses : Vec<String>,
+    pub tags : Vec<Tag>
 }
 
 #[derive(Debug)]

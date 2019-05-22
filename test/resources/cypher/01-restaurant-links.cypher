@@ -1,0 +1,1 @@
+CREATE (:Restaurant { id: '4321' })-[r:FEATURED_BY]->(:Feature { id: '1234' });

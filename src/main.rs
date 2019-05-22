@@ -6,15 +6,13 @@
 
 extern crate rusted_cypher;
 
-mod _diesel;
+mod db;
 mod models;
 mod graphql;
-mod db;
 
-use crate::db::Neo4jConnection;
-use crate::db::MySQLConnection;
+use crate::db::connection::{Databases, MySQLConnection, Neo4jConnection};
 use crate::models::{Restaurant};
-use crate::graphql::schema::{QueryRoot, MutationRoot, Context};
+use crate::graphql::schema::{QueryRoot, MutationRoot};
 use juniper::RootNode;
 use rocket::response::content;
 use rocket::response::status;
@@ -60,7 +58,7 @@ pub fn get_graphql_handler(
     request: juniper_rocket::GraphQLRequest,
     schema: State<Schema>
 ) -> juniper_rocket::GraphQLResponse {
-    request.execute(&schema, &Context { neo4j, mysql })
+    request.execute(&schema, &Databases { neo4j, mysql })
 }
 
 #[post("/graphql", data = "<request>")]
@@ -70,7 +68,7 @@ pub fn post_graphql_handler(
     request: juniper_rocket::GraphQLRequest,
     schema: State<Schema>
 ) -> juniper_rocket::GraphQLResponse {
-    request.execute(&schema, &Context { neo4j, mysql })
+    request.execute(&schema, &Databases { neo4j, mysql })
 }
 
 fn main() {

@@ -1,0 +1,6 @@
+CREATE TABLE feature (
+  id VARCHAR(255) NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  type VARCHAR(255) NOT NULL,
+  PRIMARY KEY (id)
+)

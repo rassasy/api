@@ -1,0 +1,9 @@
+version: '3.7'
+services:
+  api:
+    build:
+      context: ../..
+      dockerfile: resources/docker/api-debug
+    container_name: api
+    ports:
+      - "8000:8000"
