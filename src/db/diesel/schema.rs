@@ -5,10 +5,10 @@ table! {
         city -> Text,
         state -> Text,
         description -> Text,
-        notes -> Text,
+        notes -> Nullable<Text>,
         country -> Text,
         visited -> Text,
-        website -> Text,
+        website -> Nullable<Text>,
         yelp -> Text,
     }
 }

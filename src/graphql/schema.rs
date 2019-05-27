@@ -2,7 +2,7 @@ use juniper::{Context as JuniperContext, FieldResult, LookAheadMethods};
 
 use crate::db::diesel::client::restaurant as RestaurantClient;
 use crate::db::connection::Databases;
-use crate::models::{Featurer, FeaturerType, Restaurant, RestaurantDetail};
+use crate::models::{Featurer, FeaturerType, Restaurant, RestaurantDetail, RestaurantLinks};
 
 impl JuniperContext for Databases {}
 
@@ -17,7 +17,7 @@ graphql_object!(Restaurant: () |&self| {
         self.name.clone()
     }
 
-    field featuredOn() -> &Vec<Featurer> as "The featurers" {
+    field featuredBy() -> &Vec<Featurer> as "The featurers" {
         &self.featurers
     }
 });
@@ -39,50 +39,33 @@ pub struct QueryRoot;
 graphql_object!(QueryRoot: Databases |&self| {
 
     field restaurants(&executor) -> FieldResult<Vec<Restaurant>> {
-        println!("LIST ALL!");
+        let look_ahead = executor.look_ahead();
 
         let details : Vec<RestaurantDetail> = RestaurantClient::list(&*executor.context().mysql).unwrap();
 
-        let look_ahead = executor.look_ahead();
-
-        if look_ahead.has_child("featuredOn") || look_ahead.has_child("locatedAt") || look_ahead.has_child("taggedWith") {
-
+        if vec!["featuredBy", "taggedWith", "locatedAt"].into_iter().any(|field| look_ahead.has_child(field)) {
+            println!("true")
         }
 
+        let restaurants : Vec<Restaurant> = details.into_iter().map(|detail| Restaurant::from(detail)).collect();
+
         //TODO: finish this implementation
-        return Ok(vec![]);
+        return Ok(restaurants);
 
     }
 
     field restaurant(&executor, id: String) -> FieldResult<Restaurant> {
-        println!("GET ONE!");
+        let look_ahead = executor.look_ahead();
+
         let details = RestaurantClient::get(&*executor.context().mysql, id).unwrap();
 
-        let mut restaurant = Restaurant {
-            id: details.id.clone(),
-            name: details.name.clone(),
-            featurers: vec![],
-            city: details.city.clone(),
-            state: details.state.clone(),
-            notes: details.notes.clone(),
-            street_addresses: vec![],
-            description: details.description.clone(),
-            visited: details.visited.to_lowercase().parse::<bool>().unwrap(),
-            tags: vec![],
-            website: details.website.clone(),
-            yelp: details.yelp.clone(),
-            country: details.country.clone()
-        };
+        if vec!["featuredBy", "taggedWith", "locatedAt"].into_iter().any(|field| look_ahead.has_child(field)) {
+            let links = RestaurantLinks { featurers: vec![], tags: vec![], street_addresses: vec![] };
 
-        if executor.look_ahead().has_child("featuredOn") {
-            restaurant.featurers = vec![Featurer {
-                id: String::from("lololol"),
-                name: String::from("got it!"),
-                featurer_type: FeaturerType::PERSON
-            }];
+            return Ok(Restaurant::from(details).with_links(links))
         }
 
-        return Ok(restaurant);
+        return Ok(Restaurant::from(details));
     }
 });
 
@@ -99,12 +82,12 @@ graphql_object!(MutationRoot: Databases |&self| {
             featurers: vec![],
             city: String::from("Tempe"),
             state: String::from("Arizona"),
-            notes: String::from("notes"),
+            notes: Some(String::from("notes")),
             street_addresses: vec![],
             description: String::from("description"),
             visited: true,
             tags: vec![],
-            website: String::from("www.google.com"),
+            website: Some(String::from("www.google.com")),
             yelp: String::from("www.yelp.com"),
             country: String::from("USA")
         });

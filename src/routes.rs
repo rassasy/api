@@ -1,6 +1,6 @@
 use crate::db::connection::{Databases, MySQLConnection, Neo4jConnection};
 use crate::graphql::schema::{QueryRoot, MutationRoot};
-use crate::models::{Restaurant};
+use crate::models::{Restaurant, LinkNode};
 use juniper::RootNode;
 use rocket::{get, post};
 use rocket::response::content;
@@ -12,27 +12,11 @@ pub type Schema = RootNode<'static, QueryRoot, MutationRoot>;
 #[get("/")]
 pub fn index(graph: Neo4jConnection) -> status::Accepted<String> {
 
-    let result = graph.exec("MATCH(r:Restaurant { id: \"1234\" }) RETURN r.id, r.name").unwrap();
+    let result = graph.exec("MATCH (r:Restaurant{id: \"4321\"})-[f:FEATURED_BY]-(a) RETURN a").unwrap();
 
-    let restaurants : Vec<Restaurant> = result.rows().map(|entry| {
-        Restaurant {
-            id: entry.get("r.id").unwrap(),
-            name: entry.get("r.name").unwrap(),
-            featurers: vec![],
-            city: String::from("Tempe"),
-            state: String::from("Arizona"),
-            notes: String::from("notes"),
-            street_addresses: vec![],
-            description: String::from("description"),
-            visited: true,
-            tags: vec![],
-            website: String::from("www.google.com"),
-            yelp: String::from("www.yelp.com"),
-            country: String::from("USA")
-        }
-    }).collect();
+    let nodes : Vec<LinkNode> = result.rows().map(|entry| entry.get::<LinkNode>("a").unwrap()).collect();
 
-    status::Accepted(Some(format!("{:?}", restaurants)))
+    status::Accepted(Some(String::from("test")))
 }
 
 #[get("/graphiql")]

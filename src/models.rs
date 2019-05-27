@@ -1,3 +1,8 @@
+extern crate array_tool;
+
+use array_tool::vec::Union;
+use serde::{Deserialize, Serialize};
+
 #[derive(Debug)]
 pub struct Restaurant {
     pub id : String,
@@ -6,31 +11,49 @@ pub struct Restaurant {
     pub state : String,
     pub featurers : Vec<Featurer>,
     pub description : String,
-    pub notes : String,
+    pub notes : Option<String>,
     pub street_addresses : Vec<String>,
     pub country : String,
     pub visited : bool,
     pub tags : Vec<Tag>,
-    pub website: String,
+    pub website: Option<String>,
     pub yelp: String
 }
 
 impl Restaurant {
-    pub fn from(details : RestaurantDetail, relations : Restaurant) -> Restaurant {
+    pub fn from(details : RestaurantDetail) -> Restaurant {
         Restaurant {
             id: details.id,
             name: details.name,
             city: details.city,
             state: details.state,
-            featurers: relations.featurers,
+            featurers: Vec::new(),
             description: details.description,
             notes: details.notes,
-            street_addresses: relations.street_addresses,
+            street_addresses: Vec::new(),
             country: details.country,
             visited: details.visited.to_lowercase().parse::<bool>().unwrap(),
-            tags: relations.tags,
+            tags: Vec::new(),
             website: details.website,
             yelp: details.yelp
+        }
+    }
+
+    pub fn with_links(self, links : RestaurantLinks) -> Restaurant {
+        Restaurant {
+            id: self.id,
+            name: self.name,
+            city: self.city,
+            state: self.state,
+            featurers: links.featurers,
+            description: self.description,
+            notes: self.notes,
+            street_addresses: links.street_addresses,
+            country: self.country,
+            visited: self.visited,
+            tags: links.tags,
+            website: self.website,
+            yelp: self.yelp
         }
     }
 }
@@ -42,10 +65,10 @@ pub struct RestaurantDetail {
     pub city : String,
     pub state : String,
     pub description : String,
-    pub notes : String,
+    pub notes : Option<String>,
     pub country : String,
     pub visited : String,
-    pub website: String,
+    pub website: Option<String>,
     pub yelp: String
 }
 
@@ -54,6 +77,11 @@ pub struct RestaurantLinks {
     pub featurers : Vec<Featurer>,
     pub street_addresses : Vec<String>,
     pub tags : Vec<Tag>
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct LinkNode {
+    pub id: String
 }
 
 #[derive(Debug)]
